@@ -1,16 +1,4 @@
-name: Build Flet Android APK
-
-on:
-  push:
-    branches: [ main ]
-  workflow_dispatch:
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout Code
+ - name: Checkout Code
         uses: actions/checkout@v4
 
       - name: Set up Java JDK 17
@@ -21,6 +9,13 @@ jobs:
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          ndk-version: '25.1.8937393'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -32,9 +27,10 @@ jobs:
           pip install --upgrade pip
           pip install flet
 
-      - name: Build APK via Flet Native (Auto Approve)
+      - name: Build APK via Flet
         run: |
-          flet build apk --no-android-sdk --yes
+          flutter config --no-analytics
+          flet build apk -vv
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
