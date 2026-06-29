@@ -9,6 +9,7 @@ from kivy.lang import Builder
 from kivy.clock import Clock
 from kivy.utils import platform
 from kivy.uix.screenmanager import ScreenManager
+from kivymd.uix.fitimage import FitImage
  
 from kivymd.app import MDApp
 from kivymd.uix.screen import MDScreen
@@ -34,6 +35,15 @@ else:
     SAVE_FILE = "hunter_data.json"
  
 # ---------------------------------------------------------------------------
+# BACKGROUND IMAGE
+# ---------------------------------------------------------------------------
+# Ganti "bg.jpg" dengan nama file foto kamu (taruh di folder yang sama dengan main.py)
+BG_IMAGE_FILE = "bg.jpg"
+ 
+_bg_candidate = os.path.join(os.path.dirname(os.path.abspath(__file__)), BG_IMAGE_FILE)
+BG_IMAGE_PATH = _bg_candidate if os.path.exists(_bg_candidate) else ""
+ 
+# ---------------------------------------------------------------------------
 # COLOR PALETTE
 # ---------------------------------------------------------------------------
 COL_BG = (0.05, 0.06, 0.08, 1)
@@ -57,11 +67,25 @@ ScreenManager:
 <SelectionScreen>:
     name: "selection"
  
-    MDBoxLayout:
-        orientation: "vertical"
-        md_bg_color: app.COL_BG
-        padding: dp(20)
-        spacing: dp(10)
+    FloatLayout:
+ 
+        FitImage:
+            source: app.BG_IMAGE if app.BG_IMAGE else ""
+            size_hint: 1, 1
+            pos_hint: {"x": 0, "y": 0}
+            allow_stretch: True
+            keep_ratio: False
+            opacity: 1 if app.BG_IMAGE else 0
+ 
+        MDBoxLayout:
+            size_hint: 1, 1
+            md_bg_color: 0, 0, 0, 0.62 if app.BG_IMAGE else 1
+ 
+        MDBoxLayout:
+            orientation: "vertical"
+            md_bg_color: 0, 0, 0, 0
+            padding: dp(20)
+            spacing: dp(10)
  
         MDLabel:
             text: "[ THE SYSTEM: HUNTER REGISTRY ]"
@@ -101,11 +125,25 @@ ScreenManager:
 <GameScreen>:
     name: "game"
  
-    MDBoxLayout:
-        orientation: "vertical"
-        md_bg_color: app.COL_BG
+    FloatLayout:
  
-        MDTopAppBar:
+        FitImage:
+            source: app.BG_IMAGE if app.BG_IMAGE else ""
+            size_hint: 1, 1
+            pos_hint: {"x": 0, "y": 0}
+            allow_stretch: True
+            keep_ratio: False
+            opacity: 1 if app.BG_IMAGE else 0
+ 
+        MDBoxLayout:
+            size_hint: 1, 1
+            md_bg_color: 0, 0, 0, 0.62 if app.BG_IMAGE else 1
+ 
+        MDBoxLayout:
+            orientation: "vertical"
+            md_bg_color: 0, 0, 0, 0
+ 
+            MDTopAppBar:
             id: topbar
             title: "HUNTER SYSTEM"
             md_bg_color: app.COL_CARD
@@ -124,7 +162,7 @@ ScreenManager:
                 # ---------- STATUS CARD ----------
                 MDCard:
                     orientation: "vertical"
-                    md_bg_color: app.COL_CARD
+                    md_bg_color: 0.11, 0.12, 0.16, 0.82
                     radius: [12]
                     padding: dp(16)
                     spacing: dp(6)
@@ -177,7 +215,7 @@ ScreenManager:
                     MDProgressBar:
                         id: xp_bar
                         value: 0
-                        max: 1
+                        max: 100
                         size_hint_y: None
                         height: dp(8)
  
@@ -243,7 +281,7 @@ ScreenManager:
  
                 MDCard:
                     orientation: "vertical"
-                    md_bg_color: app.COL_CARD_ALT
+                    md_bg_color: 0.13, 0.15, 0.20, 0.82
                     radius: [10]
                     padding: dp(12)
                     spacing: dp(10)
@@ -315,6 +353,9 @@ class GameScreen(MDScreen):
  
  
 class HunterApp(MDApp):
+ 
+    # background image path (exposed to KV via app.BG_IMAGE)
+    BG_IMAGE = BG_IMAGE_PATH
  
     # expose colors to KV via `app.COL_xxx`
     COL_BG = COL_BG
@@ -517,6 +558,7 @@ class HunterApp(MDApp):
             "strength": 10, "intelligence": 10, "agility": 10,
             "last_reset_date": datetime.now().strftime("%Y-%m-%d"),
             "daily_completed": [],
+            "custom_quests": [],
             "in_penalty_zone": False,
         }
         self.save_all_hunters()
@@ -535,6 +577,7 @@ class HunterApp(MDApp):
         self.sm.current = "game"
  
         self.muat_ulang_papan_daily_quest()
+        self.muat_ulang_side_quests()
         self.update_ui_display()
  
         if not self._clock_event:
@@ -658,7 +701,7 @@ class HunterApp(MDApp):
         ids.lbl_profile.text = f"HUNTER: {self.active_hunter} ({p_data['rank']})"
         ids.lbl_level.text = f"LEVEL: {p_data['level']}"
         ids.lbl_xp_text.text = f"XP: {p_data['xp']} / {p_data['xp_needed']}"
-        ids.xp_bar.value = (p_data["xp"] / p_data["xp_needed"]) if p_data["xp_needed"] > 0 else 0
+        ids.xp_bar.value = (p_data["xp"] / p_data["xp_needed"] * 100) if p_data["xp_needed"] > 0 else 0
         ids.lbl_str.text = f"STR (Strength): {p_data['strength']}"
         ids.lbl_int.text = f"INT (Intelligence): {p_data['intelligence']}"
         ids.lbl_agi.text = f"AGI (Agility): {p_data['agility']}"
@@ -767,7 +810,7 @@ class HunterApp(MDApp):
             if len(completed) >= len(active_pool):
                 container.add_widget(
                     MDLabel(
-                        text="\U0001F389 SEMUA QUEST HARI INI TELAH DIKERJAKAN!",
+                        text="[OK] SEMUA QUEST HARI INI TELAH DIKERJAKAN!",
                         bold=True,
                         theme_text_color="Custom",
                         text_color=COL_AMBER,
@@ -809,8 +852,27 @@ class HunterApp(MDApp):
             return
  
         new_quest = {"text": quest_text, "xp": 20, "stat": self.selected_stat}
-        self.create_quest_row(screen.ids.custom_list, new_quest, is_daily=False)
+ 
+        # Simpan ke profil aktif
+        p_data = self.all_hunters[self.active_hunter]
+        if "custom_quests" not in p_data:
+            p_data["custom_quests"] = []
+        p_data["custom_quests"].append(new_quest)
+        self.save_all_hunters()
+ 
+        self.muat_ulang_side_quests()
         screen.ids.quest_input.text = ""
+ 
+    def muat_ulang_side_quests(self):
+        if not self.active_hunter:
+            return
+        screen = self.sm.get_screen("game")
+        container = screen.ids.custom_list
+        container.clear_widgets()
+ 
+        p_data = self.all_hunters[self.active_hunter]
+        for i, q in enumerate(p_data.get("custom_quests", [])):
+            self.create_quest_row(container, q, is_daily=False, quest_id=i)
  
  
 if __name__ == "__main__":
