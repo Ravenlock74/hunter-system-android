@@ -163,37 +163,3 @@ class HunterApp(MDApp):
 
 if __name__ == '__main__':
     HunterApp().run()
-Langkah 2: Ganti Isi File build.yml dengan Docker Buildozer (Stabil & Anti-Gagal)
-Masuk ke folder .github/workflows/build.yml di GitHub kamu.
-
-Klik tombol Edit (ikon pensil).
-
-Ganti seluruh isinya dengan skrip otomatis yang memanfaatkan Docker Container resmi dari Buildozer ini:
-
-YAML
-name: Build Android APK Stable
-
-on:
-  push:
-    branches: [ main ]
-  workflow_dispatch:
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Build APK with Buildozer Docker
-        uses: jasonmccallister/buildozer-action@v1
-        with:
-          command: 'buildozer android debug'
-          repository_root: '.'
-
-      - name: Upload APK Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: hunter-app-apk
-          path: .id/bin/*.apk
