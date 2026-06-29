@@ -1,4 +1,4 @@
-name: Build Flet Android APK
+name: Build Android APK (Gratis via Buildozer)
 
 on:
   push:
@@ -18,16 +18,30 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Install Flet CLI
+      - name: Install System Dependencies
         run: |
-          pip install flet
+          sudo apt-get update
+          sudo apt-get install -y git zip unzip openjdk-17-jdk autoconf libtool pkg-config zlib1g-dev libncurses5-dev libgdbm-dev libnss3-dev libssl-dev libreadline-dev libffi-dev libsqlite3-dev tk-dev libgdbm-compat-dev libreprodule-dev liblzma-dev lld
 
-      - name: Build APK via Flet Cloud
+      - name: Install Buildozer and Cython
         run: |
-          flet build apk --no-android-sdk
+          pip install --upgrade pip
+          pip install buildozer cython==0.29.33 flet
+
+      - name: Initialize Buildozer
+        run: |
+          buildozer init
+          # Mengatur konfigurasi buildozer agar otomatis memasukkan flet
+          sed -i 's/# requirements = python3,kivy/requirements = python3,flet/g' buildozer.spec
+          sed -i 's/package.name = myapp/package.name = huntersystem/g' buildozer.spec
+          sed -i 's/package.domain = org.test/package.domain = org.taffin/g' buildozer.spec
+
+      - name: Build APK with Buildozer
+        run: |
+          yes | buildozer -v android debug
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: hunter-app-apk
-          path: build/apk/*.apk
+          path: bin/*.apk
