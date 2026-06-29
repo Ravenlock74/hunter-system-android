@@ -48,6 +48,30 @@ def get_quests_by_rank_and_day(rank_str):
             "weekday_int": "Review materi + catat poin penting (20 Menit)", "weekend_int": "Belajar menyusun kalimat dasar skill baru (15 Menit)",
             "weekday_agi": "Speed Typing Test: Capai Minimal 55 WPM", "weekend_agi": "Blind Balance: Berdiri satu kaki, mata tertutup 3 Menit",
             "xp_weekday": 30, "xp_weekend": 40
+        },
+        "C": {
+            "weekday_str": "20 Push-up, 2 Menit Plank, 20 Squat", "weekend_str": "Lari Minimal 2 KM",
+            "weekday_int": "Latihan soal kuliah / studi kasus software (30 Menit)", "weekend_int": "Mendengarkan audio-listening asing (20 Menit)",
+            "weekday_agi": "Speed Typing Test: Capai Minimal 65 WPM", "weekend_agi": "Blind Balance: Berdiri satu kaki, mata tertutup 4 Menit",
+            "xp_weekday": 40, "xp_weekend": 50
+        },
+        "B": {
+            "weekday_str": "30 Push-up, 2.5 Menit Plank, 30 Squat", "weekend_str": "Lari Minimal 3 KM",
+            "weekday_int": "Belajar materi kuliah esok hari (45 Menit)", "weekend_int": "Membaca artikel bahasa asing (30 Menit)",
+            "weekday_agi": "Speed Typing Test: Capai Minimal 75 WPM", "weekend_agi": "Reflex Training: Tangkap bola tenis cepat 5 Menit",
+            "xp_weekday": 50, "xp_weekend": 65
+        },
+        "A": {
+            "weekday_str": "40 Push-up, 3 Menit Plank, 40 Squat", "weekend_str": "Lari Minimal 4 KM",
+            "weekday_int": "Persiapan ujian intensif / draf laporan (60 Menit)", "weekend_int": "Percakapan aktif bahasa asing (45 Menit)",
+            "weekday_agi": "Speed Typing Test: Capai Minimal 85 WPM", "weekend_agi": "Reflex Training: Tangkap bola tenis cepat 10 Menit",
+            "xp_weekday": 65, "xp_weekend": 80
+        },
+        "S": {
+            "weekday_str": "50 Push-up, 3.5 Menit Plank, 50 Squat", "weekend_str": "Lari Minimal 5 KM",
+            "weekday_int": "Penguasaan materi & proyek rumit (90 Menit)", "weekend_int": "Fasih menganalisis dokumen asing (60 Menit)",
+            "weekday_agi": "Speed Typing Test: Capai Minimal 95+ WPM", "weekend_agi": "God-like Reflexes: Kombinasi fisik tingkat lanjut (15 Menit)",
+            "xp_weekday": 80, "xp_weekend": 100
         }
     }
     current_pool = rank_database.get(clean_rank, rank_database["E"])
@@ -122,14 +146,12 @@ def main(page: ft.Page):
         page.clean()
         p_data = all_hunters[active_hunter]
         
-        # Cek Pergantian Hari 00:00
         sekarang_str = datetime.now().strftime("%Y-%m-%d")
-        if p_data.get("last_secret_date") != sekarang_str:
+        if p_data.get("last_reset_date") != sekarang_str:
             p_data["last_reset_date"] = sekarang_str
             p_data["daily_completed"] = []
             save_all_hunters()
             
-        # UI Header Status
         page.add(
             ft.Text(f"HUNTER: {active_hunter} [{p_data['rank']}]", size=20, weight="bold", color="cyan"),
             ft.Text(f"LEVEL: {p_data['level']} | XP: {p_data['xp']}/{p_data['xp_needed']}", size=14),
@@ -138,7 +160,6 @@ def main(page: ft.Page):
             ft.Text("[ DAILY QUESTS ]", size=16, color="amber")
         )
         
-        # Render Quest List
         quests = get_quests_by_rank_and_day(p_data["rank"])
         for q in quests:
             is_done = q["id"] in p_data.get("daily_completed", [])
@@ -148,7 +169,6 @@ def main(page: ft.Page):
                 p_data["xp"] += xp_gain
                 p_data[stat] += 1
                 
-                # Level Up Logic
                 while p_data["xp"] >= p_data["xp_needed"]:
                     p_data["xp"] -= p_data["xp_needed"]
                     p_data["level"] += 1
@@ -160,7 +180,7 @@ def main(page: ft.Page):
 
             row = ft.Row(
                 controls=[
-                    ft.Text(f"[{q['stat'].upper()}] {q['text']} (+{q['xp']} XP)", expand=True),
+                    ft.Text(f"[{q['stat'].upper()}] {q['text']} (+{q['xp']} EXP)", expand=True),
                     ft.Text("✅ CLAIMED", color="green") if is_done else ft.ElevatedButton("CLAIM", on_click=klaim_reward)
                 ],
                 alignment=ft.MainAxisAlignment.SPACE_BETWEEN
