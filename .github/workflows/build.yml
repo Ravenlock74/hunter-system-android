@@ -1,4 +1,4 @@
-name: Build Flet Android APK
+name: Build Android APK Stable
 
 on:
   push:
@@ -13,31 +13,14 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup Java JDK
-        uses: actions/setup-java@v4
+      - name: Build APK with Buildozer Docker
+        uses: jasonmccallister/buildozer-action@v1
         with:
-          distribution: 'temurin'
-          java-version: '17'
-
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
-
-      - name: Install Flet and Dependencies
-        run: |
-          pip install --upgrade pip
-          pip install flet
-
-      - name: Build Android APK
-        run: |
-          flet build apk
+          command: 'buildozer android debug'
+          repository_root: '.'
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: hunter-app-apk
-          path: build/apk/*.apk
+          path: .id/bin/*.apk
