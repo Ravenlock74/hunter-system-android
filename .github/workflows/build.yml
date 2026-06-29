@@ -1,4 +1,4 @@
-name: Build Android APK (Gratis via Buildozer)
+name: Build Android APK
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
       - name: Checkout Code
@@ -21,20 +21,20 @@ jobs:
       - name: Install System Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y git zip unzip openjdk-17-jdk autoconf libtool pkg-config zlib1g-dev libncurses5-dev libgdbm-dev libnss3-dev libssl-dev libreadline-dev libffi-dev libsqlite3-dev tk-dev libgdbm-compat-dev libreprodule-dev liblzma-dev lld
+          sudo apt-get install -y git zip unzip openjdk-17-jdk autoconf libtool pkg-config zlib1g-dev libncurses5-dev libgdbm-dev libnss3-dev libssl-dev libreadline-dev libffi-dev libsqlite3-dev tk-dev lld
 
       - name: Install Buildozer and Cython
         run: |
           pip install --upgrade pip
           pip install buildozer cython==0.29.33 flet
 
-      - name: Initialize Buildozer
+      - name: Initialize Buildozer and Adjust Spec
         run: |
           buildozer init
-          # Mengatur konfigurasi buildozer agar otomatis memasukkan flet
           sed -i 's/# requirements = python3,kivy/requirements = python3,flet/g' buildozer.spec
           sed -i 's/package.name = myapp/package.name = huntersystem/g' buildozer.spec
           sed -i 's/package.domain = org.test/package.domain = org.taffin/g' buildozer.spec
+          sed -i 's/#android.accept_sdk_license = False/android.accept_sdk_license = True/g' buildozer.spec
 
       - name: Build APK with Buildozer
         run: |
