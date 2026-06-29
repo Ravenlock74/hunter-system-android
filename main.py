@@ -15,7 +15,7 @@ from kivymd.app import MDApp
 from kivymd.uix.screen import MDScreen
 from kivymd.uix.boxlayout import MDBoxLayout
 from kivymd.uix.label import MDLabel
-from kivymd.uix.button import MDRaisedButton, MDFlatButton
+from kivymd.uix.button import MDRaisedButton, MDFlatButton, MDIconButton
 from kivymd.uix.card import MDCard
 from kivymd.uix.progressbar import MDProgressBar
 from kivymd.uix.textfield import MDTextField
@@ -342,7 +342,7 @@ ScreenManager:
                     MDBoxLayout:
                         size_hint_y: None
                         height: dp(20)
-    """
+"""
  
  
 class SelectionScreen(MDScreen):
@@ -724,7 +724,7 @@ class HunterApp(MDApp):
     # QUEST ROWS
     # -----------------------------------------------------------------
     def create_quest_row(self, parent, quest_data, is_daily=True, quest_id=None,
-                          is_penalty=False, is_claimed=False):
+                          is_penalty=False, is_claimed=False, is_side=False):
         row = MDCard(
             orientation="horizontal",
             md_bg_color=COL_CARD_ALT if not is_penalty else (0.25, 0.08, 0.08, 1),
@@ -741,52 +741,100 @@ class HunterApp(MDApp):
             text=info_teks,
             theme_text_color="Custom",
             text_color=COL_GREY if is_claimed else (COL_RED if is_penalty else (1, 1, 1, 1)),
-            text_size=(None, None),
-            size_hint_x=0.7,
+            size_hint_x=1,
         )
         lbl.bind(width=lambda inst, w: setattr(inst, "text_size", (w, None)))
         lbl.bind(texture_size=lambda inst, ts: setattr(row, "height", max(ts[1] + 24, 48)))
         row.add_widget(lbl)
  
+        # ----- ALREADY CLAIMED: show badge only, no buttons -----
         if is_claimed:
             row.add_widget(
-                MDLabel(text="\u2705 CLAIMED", theme_text_color="Custom",
-                        text_color=COL_CYAN, size_hint_x=0.3, halign="right")
+                MDLabel(
+                    text="\u2705 CLAIMED",
+                    theme_text_color="Custom",
+                    text_color=COL_CYAN,
+                    size_hint_x=None,
+                    width="90dp",
+                    halign="right",
+                )
             )
-        else:
-            def complete_action(*_):
-                p_data = self.all_hunters[self.active_hunter]
-                if is_penalty:
-                    p_data["in_penalty_zone"] = False
-                    p_data["daily_completed"] = []
-                    self.save_all_hunters()
-                    self.show_dialog("PENALTY CLEARED",
-                                      "Hukuman selesai! Akses Daily Quest dipulihkan.")
-                    self.gain_xp(quest_data["xp"], None)
-                    self.muat_ulang_papan_daily_quest()
-                else:
-                    if is_daily:
-                        p_data["daily_completed"].append(quest_id)
-                        self.save_all_hunters()
-                        self.gain_xp(quest_data["xp"], quest_data["stat"])
-                        self.muat_ulang_papan_daily_quest()
-                    else:
-                        self.show_dialog("QUEST REWARD",
-                                          f"Side Quest selesai!\nReward: +{quest_data['xp']} EXP!")
-                        self.gain_xp(quest_data["xp"], quest_data["stat"])
-                        if row.parent:
-                            row.parent.remove_widget(row)
+            parent.add_widget(row)
+            return
  
-            btn = MDRaisedButton(
-                text="CLAIM",
-                size_hint_x=0.3,
-                md_bg_color=COL_RED if is_penalty else COL_CYAN,
-                text_color=(1, 1, 1, 1) if is_penalty else (0.05, 0.05, 0.05, 1),
+        # ----- NOT CLAIMED YET: build the CLAIM action -----
+        def complete_action(*_):
+            p_data = self.all_hunters[self.active_hunter]
+            if is_penalty:
+                p_data["in_penalty_zone"] = False
+                p_data["daily_completed"] = []
+                self.save_all_hunters()
+                self.show_dialog("PENALTY CLEARED",
+                                  "Hukuman selesai! Akses Daily Quest dipulihkan.")
+                self.gain_xp(quest_data["xp"], None)
+                self.muat_ulang_papan_daily_quest()
+            elif is_daily:
+                p_data["daily_completed"].append(quest_id)
+                self.save_all_hunters()
+                self.gain_xp(quest_data["xp"], quest_data["stat"])
+                self.muat_ulang_papan_daily_quest()
+            else:
+                # SIDE QUEST: bersifat 1x saja -> hapus permanen dari data
+                # setelah di-claim, supaya tidak muncul lagi pas login ulang.
+                self.show_dialog("QUEST REWARD",
+                                  f"Side Quest selesai!\nReward: +{quest_data['xp']} EXP!")
+                self.gain_xp(quest_data["xp"], quest_data["stat"])
+                quests = p_data.get("custom_quests", [])
+                if quest_id is not None and 0 <= quest_id < len(quests):
+                    quests.pop(quest_id)
+                    self.save_all_hunters()
+                self.muat_ulang_side_quests()
+ 
+        claim_btn = MDRaisedButton(
+            text="CLAIM",
+            size_hint_x=None,
+            width="100dp",
+            md_bg_color=COL_RED if is_penalty else COL_CYAN,
+            text_color=(1, 1, 1, 1) if is_penalty else (0.05, 0.05, 0.05, 1),
+        )
+        claim_btn.bind(on_release=complete_action)
+        row.add_widget(claim_btn)
+ 
+        # ----- SIDE QUEST ONLY: extra delete (trash) button -----
+        if is_side:
+            def delete_action(*_):
+                self.confirm_delete_side_quest(quest_id, quest_data["text"])
+ 
+            del_btn = MDIconButton(
+                icon="trash-can-outline",
+                theme_text_color="Custom",
+                text_color=COL_RED,
             )
-            btn.bind(on_release=complete_action)
-            row.add_widget(btn)
+            del_btn.bind(on_release=delete_action)
+            row.add_widget(del_btn)
  
         parent.add_widget(row)
+ 
+    def confirm_delete_side_quest(self, quest_id, quest_text):
+        def do_delete(*_):
+            p_data = self.all_hunters[self.active_hunter]
+            quests = p_data.get("custom_quests", [])
+            if quest_id is not None and 0 <= quest_id < len(quests):
+                quests.pop(quest_id)
+                self.save_all_hunters()
+            confirm_dialog.dismiss()
+            self.muat_ulang_side_quests()
+ 
+        confirm_dialog = MDDialog(
+            title="HAPUS SIDE QUEST",
+            text=f"Hapus quest \"{quest_text}\" ini?\nQuest yang dihapus tidak memberi EXP.",
+            buttons=[
+                MDFlatButton(text="BATAL", on_release=lambda x: confirm_dialog.dismiss()),
+                MDFlatButton(text="HAPUS", theme_text_color="Custom",
+                             text_color=COL_RED, on_release=do_delete),
+            ],
+        )
+        confirm_dialog.open()
  
     def muat_ulang_papan_daily_quest(self):
         if not self.active_hunter:
@@ -873,7 +921,7 @@ class HunterApp(MDApp):
  
         p_data = self.all_hunters[self.active_hunter]
         for i, q in enumerate(p_data.get("custom_quests", [])):
-            self.create_quest_row(container, q, is_daily=False, quest_id=i)
+            self.create_quest_row(container, q, is_daily=False, quest_id=i, is_side=True)
  
  
 if __name__ == "__main__":
