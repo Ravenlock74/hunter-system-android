@@ -12,8 +12,8 @@ from datetime import datetime
 
 # Ambil lokasi penyimpanan aman untuk Android
 if platform == 'android':
-    from android.storage import app_storage_details
-    SAVE_FILE = os.path.join(app_storage_details().files_dir, "hunter_data.json")
+    from android.storage import app_storage_path
+    SAVE_FILE = os.path.join(app_storage_path(), "hunter_data.json")
 else:
     SAVE_FILE = "hunter_data.json"
 
