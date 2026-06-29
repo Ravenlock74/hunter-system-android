@@ -7,20 +7,31 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Build APK with Buildozer Docker
-        uses: jasonmccallister/buildozer-action@v1
+      - name: Get Date
+        id: get-date
+        run: |
+          echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+
+      - name: Cache Buildozer Windows/SDK
+        uses: actions/cache@v4
         with:
-          command: 'buildozer android debug'
-          repository_root: '.'
+          path: .buildozer
+          key: ${{ runner.os }}-buildozer-${{ steps.get-date.outputs.date }}
+
+      - name: Build APK with Buildozer Action
+        uses: kivy/buildozer-action@v1
+        with:
+          command: buildozer android debug
+          repository_root: .
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: hunter-app-apk
-          path: .id/bin/*.apk
+          path: bin/*.apk
