@@ -142,63 +142,113 @@ ScreenManager:
         MDBoxLayout:
             orientation: "vertical"
             md_bg_color: 0, 0, 0, 0
+            size_hint: 1, 1
  
             MDTopAppBar:
-            id: topbar
-            title: "HUNTER SYSTEM"
-            md_bg_color: app.COL_CARD
-            specific_text_color: app.COL_CYAN
-            left_action_items: [["arrow-left", lambda x: app.kembali_ke_menu_seleksi()]]
-            right_action_items: [["delete", lambda x: app.handler_hapus_akun()]]
+                id: topbar
+                title: "HUNTER SYSTEM"
+                md_bg_color: app.COL_CARD
+                specific_text_color: app.COL_CYAN
+                left_action_items: [["arrow-left", lambda x: app.kembali_ke_menu_seleksi()]]
+                right_action_items: [["delete", lambda x: app.handler_hapus_akun()]]
  
-        ScrollView:
-            MDBoxLayout:
-                id: game_body
-                orientation: "vertical"
-                adaptive_height: True
-                padding: dp(16)
-                spacing: dp(18)
- 
-                # ---------- STATUS CARD ----------
-                MDCard:
+            ScrollView:
+                MDBoxLayout:
+                    id: game_body
                     orientation: "vertical"
-                    md_bg_color: 0.11, 0.12, 0.16, 0.82
-                    radius: [12]
-                    padding: dp(16)
-                    spacing: dp(6)
                     adaptive_height: True
+                    padding: dp(16)
+                    spacing: dp(18)
  
-                    MDLabel:
-                        id: lbl_clock
-                        text: "00:00:00"
-                        font_style: "H5"
-                        bold: True
-                        theme_text_color: "Custom"
-                        text_color: app.COL_CYAN
-                        halign: "center"
-                        size_hint_y: None
-                        height: self.texture_size[1]
+                    # ---------- STATUS CARD ----------
+                    MDCard:
+                        orientation: "vertical"
+                        md_bg_color: 0.11, 0.12, 0.16, 0.82
+                        radius: [12]
+                        padding: dp(16)
+                        spacing: dp(6)
+                        adaptive_height: True
  
-                    MDLabel:
-                        id: lbl_date
-                        text: "Date Loading..."
-                        theme_text_color: "Custom"
-                        text_color: app.COL_GREY
-                        halign: "center"
-                        font_style: "Caption"
-                        size_hint_y: None
-                        height: self.texture_size[1]
+                        MDLabel:
+                            id: lbl_clock
+                            text: "00:00:00"
+                            font_style: "H5"
+                            bold: True
+                            theme_text_color: "Custom"
+                            text_color: app.COL_CYAN
+                            halign: "center"
+                            size_hint_y: None
+                            height: self.texture_size[1]
  
-                    MDLabel:
-                        id: lbl_profile
-                        text: "HUNTER: --"
-                        bold: True
-                        size_hint_y: None
-                        height: self.texture_size[1]
+                        MDLabel:
+                            id: lbl_date
+                            text: "Date Loading..."
+                            theme_text_color: "Custom"
+                            text_color: app.COL_GREY
+                            halign: "center"
+                            font_style: "Caption"
+                            size_hint_y: None
+                            height: self.texture_size[1]
  
+                        MDLabel:
+                            id: lbl_profile
+                            text: "HUNTER: --"
+                            bold: True
+                            size_hint_y: None
+                            height: self.texture_size[1]
+ 
+                        MDLabel:
+                            id: lbl_level
+                            text: "LEVEL: 1"
+                            bold: True
+                            theme_text_color: "Custom"
+                            text_color: app.COL_AMBER
+                            size_hint_y: None
+                            height: self.texture_size[1]
+ 
+                        MDLabel:
+                            id: lbl_xp_text
+                            text: "XP: 0 / 100"
+                            font_style: "Caption"
+                            size_hint_y: None
+                            height: self.texture_size[1]
+ 
+                        MDProgressBar:
+                            id: xp_bar
+                            value: 0
+                            max: 100
+                            size_hint_y: None
+                            height: dp(8)
+ 
+                        MDBoxLayout:
+                            size_hint_y: None
+                            height: dp(1)
+                            md_bg_color: 0.25, 0.25, 0.25, 1
+ 
+                        MDLabel:
+                            id: lbl_str
+                            text: "STR (Strength): --"
+                            font_style: "Caption"
+                            size_hint_y: None
+                            height: self.texture_size[1]
+ 
+                        MDLabel:
+                            id: lbl_int
+                            text: "INT (Intelligence): --"
+                            font_style: "Caption"
+                            size_hint_y: None
+                            height: self.texture_size[1]
+ 
+                        MDLabel:
+                            id: lbl_agi
+                            text: "AGI (Agility): --"
+                            font_style: "Caption"
+                            size_hint_y: None
+                            height: self.texture_size[1]
+ 
+                    # ---------- DAILY QUESTS ----------
                     MDLabel:
-                        id: lbl_level
-                        text: "LEVEL: 1"
+                        text: "[ DAILY QUESTS ]"
                         bold: True
                         theme_text_color: "Custom"
                         text_color: app.COL_AMBER
@@ -206,142 +256,93 @@ ScreenManager:
                         height: self.texture_size[1]
  
                     MDLabel:
-                        id: lbl_xp_text
-                        text: "XP: 0 / 100"
-                        font_style: "Caption"
-                        size_hint_y: None
-                        height: self.texture_size[1]
- 
-                    MDProgressBar:
-                        id: xp_bar
-                        value: 0
-                        max: 100
-                        size_hint_y: None
-                        height: dp(8)
- 
-                    MDBoxLayout:
-                        size_hint_y: None
-                        height: dp(1)
-                        md_bg_color: 0.25, 0.25, 0.25, 1
- 
-                    MDLabel:
-                        id: lbl_str
-                        text: "STR (Strength): --"
-                        font_style: "Caption"
-                        size_hint_y: None
-                        height: self.texture_size[1]
- 
-                    MDLabel:
-                        id: lbl_int
-                        text: "INT (Intelligence): --"
-                        font_style: "Caption"
-                        size_hint_y: None
-                        height: self.texture_size[1]
- 
-                    MDLabel:
-                        id: lbl_agi
-                        text: "AGI (Agility): --"
-                        font_style: "Caption"
-                        size_hint_y: None
-                        height: self.texture_size[1]
- 
-                # ---------- DAILY QUESTS ----------
-                MDLabel:
-                    text: "[ DAILY QUESTS ]"
-                    bold: True
-                    theme_text_color: "Custom"
-                    text_color: app.COL_AMBER
-                    size_hint_y: None
-                    height: self.texture_size[1]
- 
-                MDLabel:
-                    id: reset_info
-                    text: "Quest baru otomatis diperbarui pukul 00:00 tengah malam."
-                    font_style: "Caption"
-                    theme_text_color: "Custom"
-                    text_color: app.COL_GREY
-                    text_size: self.width, None
-                    size_hint_y: None
-                    height: self.texture_size[1]
- 
-                MDBoxLayout:
-                    id: daily_list
-                    orientation: "vertical"
-                    adaptive_height: True
-                    spacing: dp(8)
- 
-                # ---------- SIDE QUESTS ----------
-                MDLabel:
-                    text: "[ SIDE QUESTS ] - Tugas Kustom Hari Ini"
-                    bold: True
-                    theme_text_color: "Custom"
-                    text_color: app.COL_CYAN
-                    size_hint_y: None
-                    height: self.texture_size[1]
- 
-                MDCard:
-                    orientation: "vertical"
-                    md_bg_color: 0.13, 0.15, 0.20, 0.82
-                    radius: [10]
-                    padding: dp(12)
-                    spacing: dp(10)
-                    adaptive_height: True
- 
-                    MDTextField:
-                        id: quest_input
-                        hint_text: "Nama Tugas (Fixed: +20 EXP)..."
-                        mode: "rectangle"
- 
-                    MDLabel:
-                        text: "Pilih kategori stat:"
+                        id: reset_info
+                        text: "Quest baru otomatis diperbarui pukul 00:00 tengah malam."
                         font_style: "Caption"
                         theme_text_color: "Custom"
                         text_color: app.COL_GREY
+                        text_size: self.width, None
                         size_hint_y: None
                         height: self.texture_size[1]
  
                     MDBoxLayout:
-                        size_hint_y: None
-                        height: dp(40)
+                        id: daily_list
+                        orientation: "vertical"
+                        adaptive_height: True
                         spacing: dp(8)
  
-                        MDRaisedButton:
-                            id: btn_stat_str
-                            text: "STR"
-                            md_bg_color: app.COL_DARKGREY
-                            on_release: app.select_stat("strength")
+                    # ---------- SIDE QUESTS ----------
+                    MDLabel:
+                        text: "[ SIDE QUESTS ] - Tugas Kustom Hari Ini"
+                        bold: True
+                        theme_text_color: "Custom"
+                        text_color: app.COL_CYAN
+                        size_hint_y: None
+                        height: self.texture_size[1]
+ 
+                    MDCard:
+                        orientation: "vertical"
+                        md_bg_color: 0.13, 0.15, 0.20, 0.82
+                        radius: [10]
+                        padding: dp(12)
+                        spacing: dp(10)
+                        adaptive_height: True
+ 
+                        MDTextField:
+                            id: quest_input
+                            hint_text: "Nama Tugas (Fixed: +20 EXP)..."
+                            mode: "rectangle"
+ 
+                        MDLabel:
+                            text: "Pilih kategori stat:"
+                            font_style: "Caption"
+                            theme_text_color: "Custom"
+                            text_color: app.COL_GREY
+                            size_hint_y: None
+                            height: self.texture_size[1]
+ 
+                        MDBoxLayout:
+                            size_hint_y: None
+                            height: dp(40)
+                            spacing: dp(8)
+ 
+                            MDRaisedButton:
+                                id: btn_stat_str
+                                text: "STR"
+                                md_bg_color: app.COL_DARKGREY
+                                on_release: app.select_stat("strength")
+ 
+                            MDRaisedButton:
+                                id: btn_stat_int
+                                text: "INT"
+                                md_bg_color: app.COL_CYAN
+                                text_color: 0.05, 0.05, 0.05, 1
+                                on_release: app.select_stat("intelligence")
+ 
+                            MDRaisedButton:
+                                id: btn_stat_agi
+                                text: "AGI"
+                                md_bg_color: app.COL_DARKGREY
+                                on_release: app.select_stat("agility")
  
                         MDRaisedButton:
-                            id: btn_stat_int
-                            text: "INT"
+                            text: "+ ADD QUEST"
                             md_bg_color: app.COL_CYAN
                             text_color: 0.05, 0.05, 0.05, 1
-                            on_release: app.select_stat("intelligence")
+                            size_hint_x: 1
+                            height: dp(44)
+                            on_release: app.add_custom_quest()
  
-                        MDRaisedButton:
-                            id: btn_stat_agi
-                            text: "AGI"
-                            md_bg_color: app.COL_DARKGREY
-                            on_release: app.select_stat("agility")
+                    MDBoxLayout:
+                        id: custom_list
+                        orientation: "vertical"
+                        adaptive_height: True
+                        spacing: dp(8)
  
-                    MDRaisedButton:
-                        text: "+ ADD QUEST"
-                        md_bg_color: app.COL_CYAN
-                        text_color: 0.05, 0.05, 0.05, 1
-                        size_hint_x: 1
-                        height: dp(44)
-                        on_release: app.add_custom_quest()
- 
-                MDBoxLayout:
-                    id: custom_list
-                    orientation: "vertical"
-                    adaptive_height: True
-                    spacing: dp(8)
- 
-                MDBoxLayout:
-                    size_hint_y: None
-                    height: dp(20)
-"""
+                    MDBoxLayout:
+                        size_hint_y: None
+                        height: dp(20)
+    """
  
  
 class SelectionScreen(MDScreen):
