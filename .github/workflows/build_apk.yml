@@ -42,26 +42,27 @@ jobs:
           key: buildozer-global-${{ hashFiles('buildozer.spec') }}
  
       - name: Build APK with Buildozer
-        env:
-          KEYSTORE_PATH: ${{ env.HOME }}/hunter.keystore
-          KEYSTORE_PASS: ${{ secrets.KEYSTORE_PASS }}
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          KEY_PASS: ${{ secrets.KEY_PASS }}
         run: |
           yes | buildozer -v android debug
  
-      - name: Sign APK with consistent keystore
+      - name: Sign APK with apksigner
         run: |
           APK_PATH=$(find bin/ -name "*.apk" | head -1)
-          echo "Signing $APK_PATH"
-          jarsigner -verbose \
-            -keystore $HOME/hunter.keystore \
-            -storepass "${{ secrets.KEYSTORE_PASS }}" \
-            -keypass "${{ secrets.KEY_PASS }}" \
-            -sigalg SHA256withRSA \
-            -digestalg SHA-256 \
-            "$APK_PATH" "${{ secrets.KEY_ALIAS }}"
-          echo "APK_PATH=$APK_PATH" >> $GITHUB_ENV
+          echo "Found APK: $APK_PATH"
+ 
+          # Cari apksigner dari Android SDK yang dipakai buildozer
+          APKSIGNER=$(find ~/.buildozer -name "apksigner" -type f | head -1)
+          echo "Using apksigner: $APKSIGNER"
+ 
+          # Sign ulang APK dengan keystore kita
+          $APKSIGNER sign \
+            --ks $HOME/hunter.keystore \
+            --ks-pass pass:"${{ secrets.KEYSTORE_PASS }}" \
+            --ks-key-alias "${{ secrets.KEY_ALIAS }}" \
+            --key-pass pass:"${{ secrets.KEY_PASS }}" \
+            "$APK_PATH"
+ 
+          echo "Signing done: $APK_PATH"
  
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
