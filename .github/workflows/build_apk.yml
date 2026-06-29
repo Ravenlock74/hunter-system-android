@@ -31,10 +31,6 @@ jobs:
           pip install --user --upgrade buildozer
           echo "$HOME/.local/bin" >> $GITHUB_PATH
  
-      - name: Decode keystore from secret
-        run: |
-          echo "${{ secrets.KEYSTORE_B64 }}" | base64 -d > $HOME/hunter.keystore
- 
       - name: Cache Buildozer global directory
         uses: actions/cache@v4
         with:
@@ -44,25 +40,6 @@ jobs:
       - name: Build APK with Buildozer
         run: |
           yes | buildozer -v android debug
- 
-      - name: Sign APK with apksigner
-        run: |
-          APK_PATH=$(find bin/ -name "*.apk" | head -1)
-          echo "Found APK: $APK_PATH"
- 
-          # Cari apksigner dari Android SDK yang dipakai buildozer
-          APKSIGNER=$(find ~/.buildozer -name "apksigner" -type f | head -1)
-          echo "Using apksigner: $APKSIGNER"
- 
-          # Sign ulang APK dengan keystore kita
-          $APKSIGNER sign \
-            --ks $HOME/hunter.keystore \
-            --ks-pass pass:"${{ secrets.KEYSTORE_PASS }}" \
-            --ks-key-alias "${{ secrets.KEY_ALIAS }}" \
-            --key-pass pass:"${{ secrets.KEY_PASS }}" \
-            "$APK_PATH"
- 
-          echo "Signing done: $APK_PATH"
  
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
