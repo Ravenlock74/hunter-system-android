@@ -1,198 +1,199 @@
-import flet as ft
+from kivy.lang import Builder
+from kivymd.app import MDApp
+from kivymd.uix.boxlayout import MDBoxLayout
+from kivymd.uix.button import MDRaisedButton
+from kivymd.uix.label import MDLabel
+from kivymd.uix.progressbar import MDProgressBar
+from kivy.uix.scrollview import ScrollView
+from kivy.utils import platform
 import os
 import json
 from datetime import datetime
 
-SAVE_FILE = "hunter_data.json"
-all_hunters = {}
-active_hunter = None
+# Ambil lokasi penyimpanan aman untuk Android
+if platform == 'android':
+    from android.storage import app_storage_details
+    SAVE_FILE = os.path.join(app_storage_details().files_dir, "hunter_data.json")
+else:
+    SAVE_FILE = "hunter_data.json"
 
-def load_all_hunters():
-    global all_hunters
-    if os.path.exists(SAVE_FILE):
+KV = '''
+MDBoxLayout:
+    orientation: 'vertical'
+    md_bg_color: 0.1, 0.11, 0.14, 1
+    padding: dp(20)
+    spacing: dp(15)
+
+    MDLabel:
+        text: "⚠️ SYSTEM NOTIFICATION"
+        font_style: "H5"
+        theme_text_color: "Custom"
+        text_color: 1, 0.7, 0, 1
+        halign: "center"
+        size_hint_y: None
+        height: self.texture_size[1]
+
+    MDLabel:
+        id: lbl_status
+        text: "HUNTER STATUS LOADING..."
+        font_style: "Subtitle1"
+        theme_text_color: "Custom"
+        text_color: 0, 0.9, 1, 1
+        halign: "center"
+        size_hint_y: None
+        height: self.texture_size[1]
+
+    MDProgressBar:
+        id: progress_xp
+        value: 0
+        max: 1
+        size_hint_y: None
+        height: dp(8)
+
+    MDLabel:
+        text: "[ DAILY QUESTS ]"
+        font_style: "Button"
+        theme_text_color: "Custom"
+        text_color: 1, 0.7, 0, 1
+
+    ScrollView:
+        MDBoxLayout:
+            id: container_quests
+            orientation: 'vertical'
+            adaptive_height: True
+            spacing: dp(10)
+'''
+
+class HunterApp(MDApp):
+    def build(self):
+        self.theme_cls.theme_style = "Dark"
+        self.theme_cls.primary_palette = "Cyan"
+        self.load_data()
+        
+        # Contoh data default jika baru pertama buka
+        if "PLAYER" not in self.all_hunters:
+            self.all_hunters["PLAYER"] = {
+                "rank": "E-Rank", "level": 1, "xp": 0, "xp_needed": 100,
+                "strength": 10, "intelligence": 10, "agility": 10,
+                "daily_completed": []
+            }
+        
+        layout = Builder.load_string(KV)
+        return layout
+
+    def on_start(self):
+        self.update_ui()
+
+    def load_data(self):
+        if os.path.exists(SAVE_FILE):
+            try:
+                with open(SAVE_FILE, 'r') as f:
+                    self.all_hunters = json.load(f)
+            except:
+                self.all_hunters = {}
+        else:
+            self.all_hunters = {}
+
+    def save_data(self):
         try:
-            with open(SAVE_FILE, 'r', encoding='utf-8') as f:
-                loaded = json.load(f)
-                if isinstance(loaded, dict): all_hunters = loaded
-        except: all_hunters = {}
+            with open(SAVE_FILE, 'w') as f:
+                json.dump(self.all_hunters, f, indent=4)
+        except:
+            pass
 
-def save_all_hunters():
-    global all_hunters
-    try:
-        with open(SAVE_FILE, 'w', encoding='utf-8') as f:
-            json.dump(all_hunters, f, indent=4)
-    except: pass
-
-def dapatkan_rank_dari_level(level):
-    if level >= 80: return "S-Rank"
-    elif level >= 51: return "A-Rank"
-    elif level >= 31: return "B-Rank"
-    elif level >= 16: return "C-Rank"
-    elif level >= 6: return "D-Rank"
-    else: return "E-Rank"
-
-def get_quests_by_rank_and_day(rank_str):
-    day = datetime.now().weekday()
-    is_weekday = day < 5
-    clean_rank = rank_str.replace("-Rank", "").strip()
-    
-    rank_database = {
-        "E": {
-            "weekday_str": "10 Push-up, 1 Menit Plank, 10 Squat", "weekend_str": "Lari Minimal 1 KM",
-            "weekday_int": "Review materi / Video Learning (10 Menit)", "weekend_int": "Pelajari bahasa asing / skill baru (10 Menit)",
-            "weekday_agi": "Speed Typing Test: Capai Minimal 45 WPM", "weekend_agi": "Blind Balance: Berdiri satu kaki, mata tertutup 2 Menit",
-            "xp_weekday": 20, "xp_weekend": 30
-        },
-        "D": {
-            "weekday_str": "15 Push-up, 1.5 Menit Plank, 15 Squat", "weekend_str": "Lari Minimal 1.5 KM",
-            "weekday_int": "Review materi + catat poin penting (20 Menit)", "weekend_int": "Belajar menyusun kalimat dasar skill baru (15 Menit)",
-            "weekday_agi": "Speed Typing Test: Capai Minimal 55 WPM", "weekend_agi": "Blind Balance: Berdiri satu kaki, mata tertutup 3 Menit",
-            "xp_weekday": 30, "xp_weekend": 40
-        },
-        "C": {
-            "weekday_str": "20 Push-up, 2 Menit Plank, 20 Squat", "weekend_str": "Lari Minimal 2 KM",
-            "weekday_int": "Latihan soal kuliah / studi kasus software (30 Menit)", "weekend_int": "Mendengarkan audio-listening asing (20 Menit)",
-            "weekday_agi": "Speed Typing Test: Capai Minimal 65 WPM", "weekend_agi": "Blind Balance: Berdiri satu kaki, mata tertutup 4 Menit",
-            "xp_weekday": 40, "xp_weekend": 50
-        },
-        "B": {
-            "weekday_str": "30 Push-up, 2.5 Menit Plank, 30 Squat", "weekend_str": "Lari Minimal 3 KM",
-            "weekday_int": "Belajar materi kuliah esok hari (45 Menit)", "weekend_int": "Membaca artikel bahasa asing (30 Menit)",
-            "weekday_agi": "Speed Typing Test: Capai Minimal 75 WPM", "weekend_agi": "Reflex Training: Tangkap bola tenis cepat 5 Menit",
-            "xp_weekday": 50, "xp_weekend": 65
-        },
-        "A": {
-            "weekday_str": "40 Push-up, 3 Menit Plank, 40 Squat", "weekend_str": "Lari Minimal 4 KM",
-            "weekday_int": "Persiapan ujian intensif / draf laporan (60 Menit)", "weekend_int": "Percakapan aktif bahasa asing (45 Menit)",
-            "weekday_agi": "Speed Typing Test: Capai Minimal 85 WPM", "weekend_agi": "Reflex Training: Tangkap bola tenis cepat 10 Menit",
-            "xp_weekday": 65, "xp_weekend": 80
-        },
-        "S": {
-            "weekday_str": "50 Push-up, 3.5 Menit Plank, 50 Squat", "weekend_str": "Lari Minimal 5 KM",
-            "weekday_int": "Penguasaan materi & proyek rumit (90 Menit)", "weekend_int": "Fasih menganalisis dokumen asing (60 Menit)",
-            "weekday_agi": "Speed Typing Test: Capai Minimal 95+ WPM", "weekend_agi": "God-like Reflexes: Kombinasi fisik tingkat lanjut (15 Menit)",
-            "xp_weekday": 80, "xp_weekend": 100
-        }
-    }
-    current_pool = rank_database.get(clean_rank, rank_database["E"])
-    xp_reward = current_pool["xp_weekday"] if is_weekday else current_pool["xp_weekend"]
-    
-    return [
-        {"id": "q1", "text": current_pool["weekday_str"] if is_weekday else current_pool["weekend_str"], "xp": xp_reward, "stat": "strength"},
-        {"id": "q2", "text": current_pool["weekday_int"] if is_weekday else current_pool["weekend_int"], "xp": xp_reward, "stat": "intelligence"},
-        {"id": "q3", "text": current_pool["weekday_agi"] if is_weekday else current_pool["weekend_agi"], "xp": xp_reward, "stat": "agility"}
-    ]
-
-def main(page: ft.Page):
-    page.title = "Hunter System Android"
-    page.theme_mode = ft.ThemeMode.DARK
-    page.scroll = "adaptive"
-    
-    load_all_hunters()
-    
-    def rute_pilih_karakter():
-        page.clean()
-        page.add(
-            ft.Text("⚠️ SYSTEM NOTIFICATION", size=24, weight="bold", color="amber"),
-            ft.Text("Silakan pilih Karakter Slot untuk sinkronisasi:", size=14)
+    def update_ui(self):
+        p_data = self.all_hunters["PLAYER"]
+        
+        # Update teks status utama
+        self.root.ids.lbl_status.text = (
+            f"HUNTER: PLAYER [{p_data['rank']}]\\n"
+            f"LEVEL: {p_data['level']} | XP: {p_data['xp']}/{p_data['xp_needed']}\\n\\n"
+            f"STR: {p_data['strength']} | INT: {p_data['intelligence']} | AGI: {p_data['agility']}"
         )
         
-        lv = ft.ListView(expand=1, spacing=10, padding=20)
-        for name, data in all_hunters.items():
-            if isinstance(data, dict) and "level" in data:
-                def masuk_game(e, n=name):
-                    global active_hunter
-                    active_hunter = n
-                    rute_game_utama()
-                lv.controls.append(
-                    ft.ElevatedButton(
-                        text=f"Slot: {name} | Lv.{data['level']} [{data['rank']}]",
-                        on_click=masuk_game,
-                        width=400,
-                        style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=8))
-                    )
-                )
-        page.add(lv)
+        # Update progress bar
+        self.root.ids.progress_xp.value = p_data['xp'] / p_data['xp_needed']
         
-        def buka_input_nama(e):
-            def simpan_nama(ev):
-                nama = txt_nama.value.strip().upper()
-                if nama and nama not in all_hunters:
-                    all_hunters[nama] = {
-                        "rank": "E-Rank", "level": 1, "xp": 0, "xp_needed": 100,
-                        "strength": 10, "intelligence": 10, "agility": 10,
-                        "last_reset_date": datetime.now().strftime("%Y-%m-%d"), 
-                        "daily_completed": [], "in_penalty_zone": False
-                    }
-                    save_all_hunters()
-                    dlg.open = False
-                    page.update()
-                    rute_pilih_karakter()
-                    
-            txt_nama = ft.TextField(label="Nama Hunter")
-            dlg = ft.AlertDialog(
-                title=ft.Text("Awaken New Character"),
-                content=txt_nama,
-                actions=[ft.TextButton("Awaken", on_click=simpan_nama)]
-            )
-            page.dialog = dlg
-            dlg.open = True
-            page.update()
-            
-        page.add(ft.FloatingActionButton(icon=ft.icons.ADD, text="New Character", on_click=buka_input_nama))
-        page.update()
-
-    def rute_game_utama():
-        page.clean()
-        p_data = all_hunters[active_hunter]
+        # Update list quest
+        container = self.root.ids.container_quests
+        container.clear_widgets()
         
-        sekarang_str = datetime.now().strftime("%Y-%m-%d")
-        if p_data.get("last_reset_date") != sekarang_str:
-            p_data["last_reset_date"] = sekarang_str
-            p_data["daily_completed"] = []
-            save_all_hunters()
-            
-        page.add(
-            ft.Text(f"HUNTER: {active_hunter} [{p_data['rank']}]", size=20, weight="bold", color="cyan"),
-            ft.Text(f"LEVEL: {p_data['level']} | XP: {p_data['xp']}/{p_data['xp_needed']}", size=14),
-            ft.ProgressBar(value=p_data['xp']/p_data['xp_needed'], width=400, color="cyan"),
-            ft.Divider(),
-            ft.Text("[ DAILY QUESTS ]", size=16, color="amber")
-        )
+        quests = [
+            {"id": "q1", "text": "10 Push-up, 1 Menit Plank, 10 Squat", "xp": 20, "stat": "strength"},
+            {"id": "q2", "text": "Review Materi / Video Learning (10 Menit)", "xp": 20, "stat": "intelligence"},
+            {"id": "q3", "text": "Speed Typing Test: Capai 45 WPM", "xp": 20, "stat": "agility"}
+        ]
         
-        quests = get_quests_by_rank_and_day(p_data["rank"])
         for q in quests:
-            is_done = q["id"] in p_data.get("daily_completed", [])
+            box = MDBoxLayout(orientation='horizontal', size_hint_y=None, height=48, spacing=10)
+            lbl = MDLabel(text=f"[{q['stat'].upper()}] {q['text']}", theme_text_color="Secondary")
             
-            def klaim_reward(e, q_id=q["id"], xp_gain=q["xp"], stat=q["stat"]):
-                p_data["daily_completed"].append(q_id)
-                p_data["xp"] += xp_gain
-                p_data[stat] += 1
+            if q["id"] in p_data["daily_completed"]:
+                btn = MDRaisedButton(text="CLAIMED", md_bg_color=(0, 0.5, 0, 1), disabled=True)
+            else:
+                btn = MDRaisedButton(text="CLAIM", on_release=lambda x, quest=q: self.claim_quest(quest))
                 
-                while p_data["xp"] >= p_data["xp_needed"]:
-                    p_data["xp"] -= p_data["xp_needed"]
-                    p_data["level"] += 1
-                    p_data["xp_needed"] = 100 + ((p_data["level"] - 1) * 20)
-                    p_data["rank"] = dapatkan_rank_dari_level(p_data["level"])
-                    
-                save_all_hunters()
-                rute_game_utama()
+            box.add_widget(lbl)
+            box.add_widget(btn)
+            container.add_widget(box)
 
-            row = ft.Row(
-                controls=[
-                    ft.Text(f"[{q['stat'].upper()}] {q['text']} (+{q['xp']} EXP)", expand=True),
-                    ft.Text("✅ CLAIMED", color="green") if is_done else ft.ElevatedButton("CLAIM", on_click=klaim_reward)
-                ],
-                alignment=ft.MainAxisAlignment.SPACE_BETWEEN
-            )
-            page.add(row)
+    def claim_quest(self, quest):
+        p_data = self.all_hunters["PLAYER"]
+        p_data["daily_completed"].append(quest["id"])
+        p_data["xp"] += quest["xp"]
+        p_data[quest["stat"]] += 1
+        
+        # Logika Level Up
+        while p_data["xp"] >= p_data["xp_needed"]:
+            p_data["xp"] -= p_data["xp_needed"]
+            p_data["level"] += 1
+            p_data["xp_needed"] = 100 + ((p_data["level"] - 1) * 20)
             
-        def logout(e):
-            rute_pilih_karakter()
+            # Update Rank
+            lv = p_data["level"]
+            if lv >= 80: p_data["rank"] = "S-Rank"
+            elif lv >= 51: p_data["rank"] = "A-Rank"
+            elif lv >= 31: p_data["rank"] = "B-Rank"
+            elif lv >= 16: p_data["rank"] = "C-Rank"
+            elif lv >= 6: p_data["rank"] = "D-Rank"
+            else: p_data["rank"] = "E-Rank"
             
-        page.add(ft.Divider(), ft.ElevatedButton("Switch Character", on_click=logout, color="red"))
-        page.update()
+        self.save_data()
+        self.update_ui()
 
-    rute_pilih_karakter()
+if __name__ == '__main__':
+    HunterApp().run()
+Langkah 2: Ganti Isi File build.yml dengan Docker Buildozer (Stabil & Anti-Gagal)
+Masuk ke folder .github/workflows/build.yml di GitHub kamu.
 
-ft.app(target=main)
+Klik tombol Edit (ikon pensil).
+
+Ganti seluruh isinya dengan skrip otomatis yang memanfaatkan Docker Container resmi dari Buildozer ini:
+
+YAML
+name: Build Android APK Stable
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Build APK with Buildozer Docker
+        uses: jasonmccallister/buildozer-action@v1
+        with:
+          command: 'buildozer android debug'
+          repository_root: '.'
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: hunter-app-apk
+          path: .id/bin/*.apk
